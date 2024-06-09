@@ -1,5 +1,5 @@
 // load in the environment vars
-require('dotenv').config({silent: true})
+require("dotenv").config({ silent: true });
 
 const {
   makeWASocket,
@@ -10,7 +10,7 @@ const {
 const fs = require("fs");
 const express = require("express");
 const bodyParser = require("body-parser");
-const logger = require('morgan')
+const logger = require("morgan");
 
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState("sessions/wa");
@@ -60,14 +60,43 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//logger 
-app.use(logger('dev'))
+const hapus = (req, res, next) => {
+  const filePath = "sessions/wa/session-*"; // Replace with the actual path to your file
+
+  const session_folder = "sessions/wa";
+  try {
+    if (!fs.existsSync(session_folder)) {
+      console.log("fodler tidak ada");
+      next();
+    } else {
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`Error removing file: ${err}`);
+          return;
+        }
+      });
+      console.log(`File ${filePath} has been successfully removed.`);
+      console.log("fodler maujud");
+    }
+    next();
+  } catch (err) {
+    console.error(err);
+    next();
+  }
+};
+
+app.use(hapus);
+//logger
+app.use(logger("dev"));
 // urusan cors
 app.use(function (req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, API-Key')
-  next()
-})
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, API-Key"
+  );
+  next();
+});
 
 const infoMessage = (req, res) => {
   try {
@@ -75,12 +104,18 @@ const infoMessage = (req, res) => {
       status: "OK",
       pesan: {
         info: {
-          url: "kirim-pesan",
+          url: "/",
           method: "get",
           keterangan: "informasi menganai API WA",
         },
+        cek_nomor: {
+          url: "/cek",
+          params: "nomor_telepon",
+          method: "get",
+          keterangan: "untuk cek apakah nomor tersebuk aktif di WA atau tidak",
+        },
         kirim_pesan: {
-          url: "kirim-pesan",
+          url: "/pesan",
           method: "post",
           keterangan: "harus menyertakan body nomor dan pesan",
         },
@@ -94,30 +129,33 @@ const infoMessage = (req, res) => {
   }
 };
 
-
 const cekWa = async (req, res) => {
   try {
-    let hp = req.body.nomor;
-    let pesan = req.body.pesan;
-    let delay = req.body.delay ? parseInt(req.body.delay) * 1000 : 2000;
-    if (!hp || !pesan) {
+    const nomor = req.params["nomor"];
+    let data = new FormData();
+    data.append("target", nomor);
+    data.append("countryCode", "62");
+    const hasil = await fetch("https://api.fonnte.com/validate", {
+      method: "POST",
+      mode: "cors",
+      headers: new Headers({
+        Authorization: process.env.FONNTE_TOKEN,
+      }),
+      body: data,
+    });
+
+    const result = await hasil.json();
+    if (result.not_registered[0]) {
       return res.status(400).json({
-        status: "ERROR",
-        messages: "nomor wa dan isi pesan tidak boleh kosong",
+        status: "NOT OK",
+        pesan: `Nomor ${result.not_registered[0]} tidak terdaftar di WA`,
+      });
+    } else {
+      return res.status(200).json({
+        status: "OK",
+        pesan: `Nomor ${result.registered[0]} aktif di WA`,
       });
     }
-    let jadi = "";
-    if (hp.substring(0, 2) == "08") {
-      jadi = `62${hp.substring(1)}`;
-    } else if (hp.substring(0, 2) == "62") {
-      jadi = hp;
-    }
-    const id = jadi + "@s.whatsapp.net"; // the WhatsApp ID
-    const cek = await sock.sendPresenceUpdate("available", id);
-    return res.status(200).json({
-      status: "OK",
-      hasil: cek,
-    });
   } catch (error) {
     return res.status(400).json({
       status: "ERROR",
@@ -159,21 +197,47 @@ const sendMessage = async (req, res) => {
   }
 };
 
-app.get("/cek", cekWa);
-app.get("/kirim-pesan", infoMessage);
+app.get("/cek/:nomor", cekWa);
+app.get("/", infoMessage);
 
 // PROTECT ALL ROUTES THAT FOLLOW
 app.use((req, res, next) => {
-  const apiKey = req.get('API-Key')
-  const keys = String(process.env.API_KEY).split(',')
-  // if (!apiKey || apiKey !== process.env.API_KEY) {
+  const apiKey = req.get("API-Key");
+  const keys = String(process.env.API_KEY).split(",");
   if (!apiKey || !keys.includes(apiKey)) {
-    res.status(401).json({error: 'unauthorised'})
+    res.status(401).json({ error: "unauthorized" });
   } else {
-    next()
+    next();
   }
-})
-app.post("/kirim-pesan", sendMessage);
+});
+
+app.use(async (req, res, next) => {
+  const nomor = req.body.nomor;
+  let data = new FormData();
+  data.append("target", nomor);
+  data.append("countryCode", "62");
+  const response = await fetch("https://api.fonnte.com/validate", {
+    method: "POST",
+    mode: "cors",
+    headers: new Headers({
+      Authorization: process.env.FONNTE_TOKEN,
+    }),
+    body: data,
+  });
+
+  const result = await response.json();
+  if (result.not_registered[0]) {
+    res
+      .status(400)
+      .json({
+        error: `nomor telp ${result.not_registered[0]} tidak terdaftar di wa`,
+      });
+  } else {
+    next();
+  }
+});
+
+app.post("/pesan", sendMessage);
 
 app.listen(port, () => {
   console.log(`server di port ${port}`);
