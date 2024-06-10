@@ -85,7 +85,7 @@ const hapus = (req, res, next) => {
   }
 };
 
-app.use(hapus);
+// app.use(hapus);
 //logger
 app.use(logger("dev"));
 // urusan cors
