@@ -60,32 +60,7 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const hapus = (req, res, next) => {
-  const filePath = "sessions/wa/session-*"; // Replace with the actual path to your file
 
-  const session_folder = "sessions/wa";
-  try {
-    if (!fs.existsSync(session_folder)) {
-      console.log("fodler tidak ada");
-      next();
-    } else {
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error(`Error removing file: ${err}`);
-          return;
-        }
-      });
-      console.log(`File ${filePath} has been successfully removed.`);
-      console.log("fodler maujud");
-    }
-    next();
-  } catch (err) {
-    console.error(err);
-    next();
-  }
-};
-
-// app.use(hapus);
 //logger
 app.use(logger("dev"));
 // urusan cors
@@ -169,10 +144,16 @@ const sendMessage = async (req, res) => {
     let hp = req.body.nomor;
     let pesan = req.body.pesan;
     let delay = req.body.delay ? parseInt(req.body.delay) * 1000 : 2000;
-    if (!hp || !pesan) {
+    if (!hp) {
       return res.status(400).json({
         status: "ERROR",
-        messages: "nomor wa dan isi pesan tidak boleh kosong",
+        messages: "Nomor wa tidak boleh kosong",
+      });
+    }
+    if (!pesan) {
+      return res.status(400).json({
+        status: "ERROR",
+        messages: "Isi pesan tidak boleh kosong",
       });
     }
     let jadi = "";
@@ -206,6 +187,7 @@ app.use((req, res, next) => {
   const keys = String(process.env.API_KEY).split(",");
   if (!apiKey || !keys.includes(apiKey)) {
     res.status(401).json({ error: "unauthorized" });
+    // res.status(401).json({'apikey': apiKey})
   } else {
     next();
   }
