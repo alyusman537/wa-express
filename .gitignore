@@ -2,6 +2,7 @@
 node_modules/
 sessions/
 env
+.env
 baileys_auth_info/
 baileys_store_multi.json
 wa-logs.txt
