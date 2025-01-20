@@ -545,7 +545,7 @@ const sendOtp = async (req, res) => {
 		})
 	  }
 	  const id = jadi + "@s.whatsapp.net"; // the WhatsApp ID
-	  const formatOtp = `*${judul}*\n| *`+otp+`*\n\n${pesan}`
+	  const formatOtp = "*"+judul+"*\n> `*"+otp+"*`\n\n"+pesan+"\n\n> `Send by BMT Maslahah`"
 	  let send_message = await sock.sendMessage(id, { text: formatOtp }); //sendMessageWTyping
 	  // let send_message = await sendMessageWTyping({ text: req.body.pesan }, id); //sendMessageWTyping
 	  return res.status(200).json({
