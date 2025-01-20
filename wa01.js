@@ -1,5 +1,7 @@
 // load in the environment vars
 require("dotenv").config({ silent: true });
+const db = require('./db.js')
+const { v4: uuidv4 } = require('uuid');
 
 const Boom = require('@hapi/boom')
 const NodeCache = require('node-cache')
@@ -182,6 +184,23 @@ const startSock = async() => {
 						startSock()
 					} else {
 						console.log('Connection closed. You are logged out.')
+						/*const filePath = './baileys_store_multi.json'; // Replace with the actual path to your file
+						const folderPath = './baileys_auth_info'; // Replace with the actual path to your file
+						// Remove the file
+						fs.unlink(filePath, (err) => {
+						if (err) {
+							console.error(`Error removing file: ${err}`);
+							return;
+						}
+						console.log(`File ${filePath} has been successfully removed.`);
+						});
+						fs.rmdir(folderPath, (err) => {
+							if (err) {
+								console.error(`Error removing file: ${err}`);
+								return;
+							}
+							console.log(`File ${folderPath} has been successfully removed.`);
+							}); */
 					}
 				}
 				
@@ -215,7 +234,7 @@ const startSock = async() => {
 					console.log(result)
 				}
 
-				console.log('connection update', update)
+				console.log('connection update :', update)
 			}
 
 			// credentials updated -- save them
@@ -237,141 +256,14 @@ const startSock = async() => {
 			// }
 
 			// history received
-			if(events['messaging-history.set']) {
+			/* if(events['messaging-history.set']) {
 				const { chats, contacts, messages, isLatest, progress, syncType } = events['messaging-history.set']
 				if (syncType === proto.HistorySync.HistorySyncType.ON_DEMAND) {
 					console.log('received on-demand history sync, messages=', messages)
 				}
 				console.log(`recv ${chats.length} chats, ${contacts.length} contacts, ${messages.length} msgs (is latest: ${isLatest}, progress: ${progress}%), type: ${syncType}`)
-			}
+			} */
 
-			// received a new message
-			// if(events['messages.upsert']) {
-			// 	const upsert = events['messages.upsert']
-			// 	console.log('recv messages ', JSON.stringify(upsert, undefined, 2))
-
-			// 	if(upsert.type === 'notify') {
-			// 		for (const msg of upsert.messages) {
-			// 			//TODO: More built-in implementation of this
-			// 			/* if (
-			// 				msg.message?.protocolMessage?.type ===
-			// 				proto.Message.ProtocolMessage.Type.HISTORY_SYNC_NOTIFICATION
-			// 			  ) {
-			// 				const historySyncNotification = getHistoryMsg(msg.message)
-			// 				if (
-			// 				  historySyncNotification?.syncType ==
-			// 				  proto.HistorySync.HistorySyncType.ON_DEMAND
-			// 				) {
-			// 				  const { messages } =
-			// 					await downloadAndProcessHistorySyncNotification(
-			// 					  historySyncNotification,
-			// 					  {}
-			// 					)
-
-								
-			// 					const chatId = onDemandMap.get(
-			// 						historySyncNotification!.peerDataRequestSessionId!
-			// 					)
-								
-			// 					console.log(messages)
-
-			// 				  onDemandMap.delete(
-			// 					historySyncNotification!.peerDataRequestSessionId!
-			// 				  )
-
-			// 				  /*
-			// 					// 50 messages is the limit imposed by whatsapp
-			// 					//TODO: Add ratelimit of 7200 seconds
-			// 					//TODO: Max retries 10
-			// 					const messageId = await sock.fetchMessageHistory(
-			// 						50,
-			// 						oldestMessageKey,
-			// 						oldestMessageTimestamp
-			// 					)
-			// 					onDemandMap.set(messageId, chatId)
-			// 				}
-			// 			  } */
-
-			// 			if (msg.message?.conversation || msg.message?.extendedTextMessage?.text) {
-			// 				const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text
-			// 				if (text == "requestPlaceholder" && !upsert.requestId) {
-			// 					const messageId = await sock.requestPlaceholderResend(msg.key) 
-			// 					console.log('requested placeholder resync, id=', messageId)
-			// 				} else if (upsert.requestId) {
-			// 					console.log('Message received from phone, id=', upsert.requestId, msg)
-			// 				}
-
-			// 				// go to an old chat and send this
-			// 				if (text == "onDemandHistSync") {
-			// 					const messageId = await sock.fetchMessageHistory(50, msg.key, msg.messageTimestamp) 
-			// 					console.log('requested on-demand sync, id=', messageId)
-			// 				}
-			// 			}
-
-			// 			if(!msg.key.fromMe && doReplies && !isJidNewsletter(msg.key?.remoteJid)) {
-
-			// 				console.log('replying to', msg.key.remoteJid)
-			// 				await sock.readMessages([msg.key])
-			// 				await sendMessageWTyping({ text: 'Hello there!' }, msg.key.remoteJid)
-			// 			}
-			// 		}
-			// 	}
-			// }
-
-			// messages updated like status delivered, message deleted etc.
-			// if(events['messages.update']) {
-			// 	console.log(
-			// 		JSON.stringify(events['messages.update'], undefined, 2)
-			// 	)
-
-			// 	for(const { key, update } of events['messages.update']) {
-			// 		if(update.pollUpdates) {
-			// 			const pollCreation = await getMessage(key)
-			// 			if(pollCreation) {
-			// 				console.log(
-			// 					'got poll update, aggregation: ',
-			// 					getAggregateVotesInPollMessage({
-			// 						message: pollCreation,
-			// 						pollUpdates: update.pollUpdates,
-			// 					})
-			// 				)
-			// 			}
-			// 		}
-			// 	}
-			// }
-
-			// if(events['message-receipt.update']) {
-			// 	console.log(events['message-receipt.update'])
-			// }
-
-			// if(events['messages.reaction']) {
-			// 	console.log(events['messages.reaction'])
-			// }
-
-			// if(events['presence.update']) {
-			// 	console.log(events['presence.update'])
-			// }
-
-			// if(events['chats.update']) {
-			// 	console.log(events['chats.update'])
-			// }
-
-			// if(events['contacts.update']) {
-			// 	for(const contact of events['contacts.update']) {
-			// 		if(typeof contact.imgUrl !== 'undefined') {
-			// 			const newUrl = contact.imgUrl === null
-			// 				? null
-			// 				: await sock.profilePictureUrl(contact.id).catch(() => null)
-			// 			console.log(
-			// 				`contact ${contact.id} has a new profile pic: ${newUrl}`,
-			// 			)
-			// 		}
-			// 	}
-			// }
-
-			// if(events['chats.delete']) {
-			// 	console.log('chats deleted ', events['chats.delete'])
-			// }
 		}
 	)
 
@@ -391,6 +283,15 @@ const startSock = async() => {
 startSock()
 
 const app = express();
+const http = require("http")
+const server = http.createServer(app)
+const { Server, Socket } = require("socket.io")
+const io = new Server(server)
+
+
+io.on("connenction", socket => {
+	console.log("socket terkoneksi");
+})
 const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -498,8 +399,15 @@ const sendMessage = async (req, res) => {
       jadi = hp;
     }
     const id = jadi + "@s.whatsapp.net"; // the WhatsApp ID
-    let send_message = await sock.sendMessage(id, { text: req.body.pesan }); //sendMessageWTyping
+	const uid = uuidv4()
+	const formatPesan = req.body.pesan+"\n\n> `Dikirim oleh BMT Maslahah`\n"+uid
+    let send_message = await sock.sendMessage(id, { text: formatPesan }); //sendMessageWTyping
 	// let send_message = await sendMessageWTyping({ text: req.body.pesan }, id); //sendMessageWTyping
+	simpanPesanToMysql({
+		nomor: jadi, 
+		pesan: formatPesan,
+		message_id: send_message.key.id
+	})
     return res.status(200).json({
       status: "ok",
       message_id: send_message.key.id,
@@ -545,9 +453,15 @@ const sendOtp = async (req, res) => {
 		})
 	  }
 	  const id = jadi + "@s.whatsapp.net"; // the WhatsApp ID
-	  const formatOtp = "*"+judul+"*\n> `*"+otp+"*`\n\n"+pesan+"\n\n> `Dikirim oleh BMT Maslahah`"
+	  const uid = uuidv4()
+	  const formatOtp = "*"+judul+"*\n> *`"+otp+"`*\n\n"+pesan+"\n\n> `Dikirim oleh BMT Maslahah`\n"+uid
 	  let send_message = await sock.sendMessage(id, { text: formatOtp }); //sendMessageWTyping
 	  // let send_message = await sendMessageWTyping({ text: req.body.pesan }, id); //sendMessageWTyping
+	  simpanPesanToMysql({
+		nomor: jadi, 
+		pesan: formatOtp,
+		message_id: send_message.key.id
+	})
 	  return res.status(200).json({
 		status: "ok",
 		message_id: send_message.key.id,
@@ -562,8 +476,20 @@ const sendOtp = async (req, res) => {
 	}
   };
 
+  const simpanPesanToMysql = async (data) => {
+	let now = new Date();
+
+	let formData = {
+		nomor: String(data.nomor).length === 0 ? "0888" : data.nomor,
+		pesan: String(data.pesan).length === 0 ? "0888" : data.pesan,
+		message_id: data.message_id,
+		uuid: data.uuid,
+		created_at: now.toLocaleString('af-ZA', { timeZone: 'ASIA/Jakarta' })
+	}
+	db.query('INSERT INTO tik_wa_express SET ?', formData)
+  };
 // app.get("/cek/:nomor", cekWa);
-app.get("/", infoMessage);
+
 
 // PROTECT ALL ROUTES THAT FOLLOW
 /*app.use((req, res, next) => {
@@ -602,9 +528,22 @@ app.get("/", infoMessage);
     next();
   }
 });*/
-
+app.get("/info", infoMessage);
 app.post("/pesan", sendMessage);
 app.post("/otp", sendOtp);
+// app.get("/hash", async (req, res) => {
+// 	const hash = await bcrypt.hash("saya"+tambahan, saltRounds)
+// 	const banding = await bcrypt.compare("saya"+tambahan, hash)
+// 	const itung = "739d58cf-c215-4418-b132-c625ec7d2bf1"
+// 	res.status(200).json({
+// 		status: "berhasil",
+// 		hash: hash,
+// 		cocok: banding,
+// 		itung: itung.length
+// 	})
+// })
+
+app.use(express.static("public"))
 
 app.listen(port, () => {
   console.log(`server di port ${port}`);

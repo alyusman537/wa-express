@@ -1,0 +1,17 @@
+.container {
+    border: 2px solid black;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.container_qr {
+    border: 2px solid blue;
+    border-radius: 10px;
+    padding: 5px;
+    margin: 5px 0;
+}
+.btn_kirim {
+    background-color:aqua;
+    padding: 5PX;
+    align-items: center;
+}

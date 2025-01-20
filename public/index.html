@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WA TIK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div id="container_qr"></div>
+        <button id="btn_kirim">Refresh</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script> -->
+<script>
+  const socket = io();
+  socket.on("connect", console.log("koneksi ")
+  )
+</script>
+    <script src="script.js"></script>
+</body>
+</html>
